@@ -45,46 +45,6 @@ app.get('/', (req, res) => {
     res.json('Hello to my app')
 })
 
-//////
-//use model user
-const User = require('./models/User')
-// image upload
-const multer = require('multer');
-app.use(express.static('public'));
-
-const path = require('path');
-const projectRoot = path.resolve();//
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(`${__dirname}/public`));
-  },
-  filename: (req, file, cb) => {
-    cb(null, file.originalname);
-  },
-});
-const upload = multer({ storage });
-
-// app.post('/api/profile', upload.array('imageUrls', 9), (req, res) => {
-//   console.log(req.files);
-//   res.send('Files uploaded successfully');
-// });
-
-
-
-app.get('/users', async (req, res) => {
-  const client = new MongoClient(dbURL)
-
-  try {
-    await client.connect()
-    const database = client.db('app-data')
-    const users = database.collection('users')
-    const returnedUsers = await users.find().toArray()
-    res.send(returnedUsers)
-  } finally {
-    await client.close()
-  }
-})
 
 app.post('/signup', async (req, res) => {
   const client = new MongoClient(dbURL)
@@ -174,6 +134,23 @@ app.get('/gendered-users', async (req, res) => {
       await client.close()
   }
 })
+
+
+
+app.get('/users', async (req, res) => {
+  const client = new MongoClient(dbURL)
+
+  try {
+    await client.connect()
+    const database = client.db('app-data')
+    const users = database.collection('users')
+    const returnedUsers = await users.find().toArray()
+    res.send(returnedUsers)
+  } finally {
+    await client.close()
+  }
+})
+
 
 app.get('/user', async (req, res) => {
   const client = new MongoClient(dbURL)
@@ -325,3 +302,36 @@ app.post('/message', async (req, res) => {
         await client.close()
     }
 })
+
+
+
+app.put('/api/store-location', async (req, res) => {
+  const client = new MongoClient(dbURL)
+
+  const { lat, lng, user_id } = req.body;
+
+  try {
+    await client.connect()
+    const database = client.db('app-data')
+    const location = database.collection('localisation')
+
+    const query = { user_id: user_id }
+
+    const updateDocument = {
+        $set: {
+            lat: lat,
+            lng: lng,
+        },
+    }
+console.log(query);
+console.log(updateDocument);
+console.log(insertedUser);
+    const insertedUser = await location.updateOne(query, updateDocument)
+
+    res.send(insertedUser);
+
+} finally {
+    await client.close()
+}
+
+});
