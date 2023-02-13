@@ -29,6 +29,8 @@ const server = app.listen(5000, function () {
     console.log('server listening on port 5000')
 })
 
+
+
 // pre before connect mongodb
 const mongoose = require('mongoose');
 const { MongoClient} = require('mongodb')
@@ -226,7 +228,6 @@ app.put('/user', async (req, res) => {
   }
 })
 
-
 app.put('/addmatch', async (req, res) => {
   const client = new MongoClient(dbURL)
   const {userId, matchedUserId} = req.body
@@ -237,24 +238,90 @@ app.put('/addmatch', async (req, res) => {
       const users = database.collection('users')
 
       const query = {user_id: userId}
-      const user = await users.findOne(query)
-      if (user) {
-          // Check if the matchedUserId already exists in the matches array
-          if (user.matches.some(match => match.user_id === matchedUserId)) {
-              return res.status(400).send({message: "Ce match existe déjà"})
-          } else {
-              const updateDocument = {
-                  $push: {matches: {user_id: matchedUserId}}
-              }
-              await users.updateOne(query, updateDocument)
-              res.send({message: "Match ajouté avec succès"})
-          }
-      } else {
-          res.status(400).send({message: "Utilisateur introuvable"})
+      const updateDocument = {
+          $push: {matches: {user_id: matchedUserId}}
       }
+      const user = await users.updateOne(query, updateDocument)
+      res.send(user)
   } finally {
       await client.close()
   }
 })
 
 
+
+app.get('/gendered-users', async (req, res) => {
+  const client = new MongoClient(dbURL)
+  const matches = req.query.matches
+;
+
+  try {
+      await client.connect()
+      const database = client.db('app-data')
+      const users = database.collection('users')
+      const query = {matches: matches}
+      const foundUsers = await users.find(query).toArray()
+      res.json(foundUsers)
+
+  } finally {
+      await client.close()
+  }
+})
+app.get('/users', async (req, res) => {
+  const client = new MongoClient(dbURL)
+  const userIds = JSON.parse(req.query.userIds)
+
+  try {
+      await client.connect()
+      const database = client.db('app-data')
+      const users = database.collection('users')
+
+      const pipeline = [
+        { $match: { user_id: userId } },
+        { $unwind: "$matches" },
+        { $lookup: { from: "users", localField: "matches", foreignField: "user_id", as: "matchData" } },
+        { $replaceRoot: { newRoot: { $arrayElemAt: ["$matchData", 0] } } }
+      ];
+      const foundUsers = await users.aggregate(pipeline).toArray()
+
+      res.json(foundUsers.map(user => user.matches))
+  } finally {
+      await client.close()
+  }
+})
+
+app.get('/messages', async (req, res) => {
+    const {userId, correspondingUserId} = req.query
+    const client = new MongoClient(dbURL)
+  console.log(userId, correspondingUserId);
+    try {
+        await client.connect()
+        const database = client.db('app-data')
+        const messages = database.collection('messages')
+
+        const query = {
+            from_userId: userId, to_userId: correspondingUserId
+        }
+        const foundMessages = await messages.find(query).toArray()
+        res.send(foundMessages)
+    } finally {
+        await client.close()
+    }
+})
+
+
+app.post('/message', async (req, res) => {
+    const client = new MongoClient(dbURL)
+    const message = req.body.message
+
+    try {
+        await client.connect()
+        const database = client.db('app-data')
+        const messages = database.collection('messages')
+
+        const insertedMessage = await messages.insertOne(message)
+        res.send(insertedMessage)
+    } finally {
+        await client.close()
+    }
+})
