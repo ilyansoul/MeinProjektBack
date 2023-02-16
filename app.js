@@ -41,10 +41,6 @@ mongoose.connect(dbURL, {
     useUnifiedTopology: true,
 }).then(console.log("MongoDB Connected !"))
 .catch(err => console.log("error : " + err));
-app.get('/', (req, res) => {
-    res.json('Hello to my app')
-})
-
 
 app.post('/signup', async (req, res) => {
   const client = new MongoClient(dbURL)
@@ -249,43 +245,53 @@ app.get('/users', async (req, res) => {
   const userIds = JSON.parse(req.query.userIds)
 
   try {
-      await client.connect()
-      const database = client.db('app-data')
-      const users = database.collection('users')
+    await client.connect()
+    const database = client.db('app-data')
+    const users = database.collection('users')
 
-      const pipeline = [
-        { $match: { user_id: userId } },
-        { $unwind: "$matches" },
-        { $lookup: { from: "users", localField: "matches", foreignField: "user_id", as: "matchData" } },
-        { $replaceRoot: { newRoot: { $arrayElemAt: ["$matchData", 0] } } }
-      ];
-      const foundUsers = await users.aggregate(pipeline).toArray()
+    // First, find the user with the matching user_id
+    const user = await users.findOne({ user_id: userIds })
 
-      res.json(foundUsers.map(user => user.matches))
+    if (!user) {
+      // Handle the case where no user was found
+      res.json([])
+      return
+    }
+
+    // Next, find all the users with user_id's in the user's "matches" array
+    const matchIds = user.matches
+    const foundMatches = await users.find({ user_id: { $in: matchIds } }).toArray()
+
+    // Finally, extract the "matches" field from each match user and send it back to the client
+    const matches = foundMatches.map(match => match.matches)
+    res.json(matches)
   } finally {
-      await client.close()
+    await client.close()
   }
 })
 
 app.get('/messages', async (req, res) => {
-    const {userId, correspondingUserId} = req.query
-    const client = new MongoClient(dbURL)
-  console.log(userId, correspondingUserId);
-    try {
-        await client.connect()
-        const database = client.db('app-data')
-        const messages = database.collection('messages')
+  const { userId, correspondingUserId } = req.query;
+  const client = new MongoClient(dbURL);
 
-        const query = {
-            from_userId: userId, to_userId: correspondingUserId
-        }
-        const foundMessages = await messages.find(query).toArray()
-        res.send(foundMessages)
-    } finally {
-        await client.close()
+  try {
+      await client.connect();
+      const database = client.db('app-data');
+      const messages = database.collection('messages');
+
+      const query = {
+        $or: [
+            { from_userId: userId, to_userId: correspondingUserId },
+            
+        ]
     }
-})
 
+      const foundMessages = await messages.find(query).toArray();
+      res.send(foundMessages);
+  } finally {
+      await client.close();
+  }
+});
 
 app.post('/message', async (req, res) => {
     const client = new MongoClient(dbURL)
@@ -303,6 +309,34 @@ app.post('/message', async (req, res) => {
     }
 })
 
+
+app.put('/edit', async (req, res) => {
+  const client = new MongoClient(dbURL)
+  const editData = req.body.editData
+
+  try {
+      await client.connect()
+      const database = client.db('app-data')
+      const users = database.collection('users')
+
+      const query = { user_id: editData.user_id }
+
+      const updateDocument = {
+          $set: {
+             
+              url: editData.url,
+              about: editData.about,
+          },
+      }
+
+      const insertedUser = await users.updateOne(query, updateDocument)
+
+      res.json(insertedUser)
+
+  } finally {
+      await client.close()
+  }
+})
 
 
 app.put('/api/store-location', async (req, res) => {
