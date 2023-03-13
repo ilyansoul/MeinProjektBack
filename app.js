@@ -249,11 +249,9 @@ app.get('/users', async (req, res) => {
     const database = client.db('app-data')
     const users = database.collection('users')
 
-    // First, find the user with the matching user_id
     const user = await users.findOne({ user_id: userIds })
 
     if (!user) {
-      // Handle the case where no user was found
       res.json([])
       return
     }
