@@ -48,6 +48,7 @@ app.get('/', (req ,res) => {
 
 
 app.post('/signup', async (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
   const client = new MongoClient(dbURL)
   const { email, password } = req.body
 
