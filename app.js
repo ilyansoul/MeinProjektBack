@@ -8,7 +8,12 @@ const {v4: uuidv4} = require('uuid')
 
 // back and front
 const cors = require('cors');
-app.use(cors());
+app.use(cors({
+  origin: 'https://front-ij31.onrender.com', 
+  credentials : true
+
+}
+  ));
 // create token //
 const jwt = require('jsonwebtoken')
 const {createToken , validateToken} = require('./JWT')
@@ -24,9 +29,10 @@ app.use(bodyParser.urlencoded({ extended: false }));
 ///use dotenv
 require('dotenv').config();
 var dbURL = process.env.DATABASE_URL;
+let port = process.env.PORT;
 // put the port localhost at 5000
-const server = app.listen(5000, function () {
-    console.log('server listening on port 5000')
+const server = app.listen(port, function () {
+    console.log('server listening on port ' + port)
 })
 
 
