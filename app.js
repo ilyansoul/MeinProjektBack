@@ -48,13 +48,10 @@ mongoose.connect(dbURL, {
 }).then(console.log("MongoDB Connected !"))
 .catch(err => console.log("error : " + err));
 
-app.get('/', (req ,res) => {
-  res.send('api running')
-})
+
 
 
 app.post('/signup', async (req, res) => {
-  res.header('Access-Control-Allow-Origin', '*');
   const client = new MongoClient(dbURL)
   const { email, password } = req.body
 
