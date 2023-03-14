@@ -10,7 +10,7 @@ const {v4: uuidv4} = require('uuid')
 const cors = require('cors');
 app.use(cors({
   origin: 'https://front-ij31.onrender.com', 
-  credentials : true
+  credentials : true,
 
 }
   ));
