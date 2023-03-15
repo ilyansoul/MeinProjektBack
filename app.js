@@ -7,6 +7,9 @@ const bcrypt = require('bcrypt');
 const {v4: uuidv4} = require('uuid')
 
 // back and front
+header('Access-Control-Allow-Origin: https://front-ij31.onrender.com');
+header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE');
+header('Access-Control-Allow-Headers: Content-Type');
 const cors = require('cors');
 app.use(cors({
   origin: 'https://front-ij31.onrender.com', 
@@ -80,7 +83,7 @@ app.post('/signup', async (req, res) => {
       const insertedUser = await users.insertOne(data)
 
       const token = jwt.sign(insertedUser, sanitizedEmail, {
-          expiresIn: 60 * 24
+          expiresIn: 60 * 60 * 24 * 60
       })
       res.status(201).json({ token, userId :generatedUserId, email: sanitizedEmail })
 
