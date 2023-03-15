@@ -7,9 +7,7 @@ const bcrypt = require('bcrypt');
 const {v4: uuidv4} = require('uuid')
 
 // back and front
-header('Access-Control-Allow-Origin: https://front-ij31.onrender.com');
-header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE');
-header('Access-Control-Allow-Headers: Content-Type');
+
 const cors = require('cors');
 app.use(cors({
   origin: 'https://front-ij31.onrender.com', 
@@ -17,6 +15,13 @@ app.use(cors({
 
 }
   ));
+
+  app.use(function(req, res, next) {
+    res.header('Access-Control-Allow-Origin', 'https://front-ij31.onrender.com');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+    res.header('Access-Control-Allow-Headers', 'Content-Type');
+    next();
+  });
 // create token //
 const jwt = require('jsonwebtoken')
 const {createToken , validateToken} = require('./JWT')
