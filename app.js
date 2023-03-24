@@ -57,7 +57,9 @@ mongoose.connect(dbURL, {
 .catch(err => console.log("error : " + err));
 
 
-
+app.get('/',  (req , res) => {
+  res.send('Welcome on my backend')
+} )
 
 app.post('/signup', async (req, res) => {
   const client = new MongoClient(dbURL)
